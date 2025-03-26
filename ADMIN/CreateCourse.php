@@ -48,8 +48,10 @@ $result = fetchCourses($conn);
                             <img src="<?= htmlspecialchars($row['course_image']); ?>" alt="Thumbnail" width="60" class="img-thumbnail">
                         </td>
                         <td>
-                            <form action="viewCourse.php" method="GET" class="d-inline">
+                            <!-- ✅ Send course_id & course_name -->
+                            <form action="CreateLessons.php" method="GET" class="d-inline">
                                 <input type="hidden" name="course_id" value="<?= htmlspecialchars($row['course_id']); ?>">
+                                <input type="hidden" name="course_name" value="<?= htmlspecialchars($row['course_name']); ?>">
                                 <button type="submit" class="btn btn-success btn-sm">
                                     <i class="uil uil-eye"></i> View
                                 </button>
@@ -70,6 +72,7 @@ $result = fetchCourses($conn);
         <p class="text-muted text-center">No courses found.</p>
     <?php } ?>
 </div>
+
 
 <div class="container mt-5">
     <div class="card shadow p-4">
@@ -113,4 +116,3 @@ $result = fetchCourses($conn);
         </form>
     </div>
 </div>
-

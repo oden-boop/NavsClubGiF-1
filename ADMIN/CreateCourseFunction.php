@@ -41,7 +41,6 @@ function insertCourse($conn) {
     $stmt->bind_param("ssdss", $c_name, $c_desc, $c_price, $c_level, $imageData);
 
     if ($stmt->execute()) {
-        echo "<script>setTimeout(()=>{window.location.href='CreateCourse.php';},300);</script>";
         return '<div class="alert alert-success">Course Added Successfully!</div>';
     } else {
         return '<div class="alert alert-danger">Error: ' . $conn->error . '</div>';

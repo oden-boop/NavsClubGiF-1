@@ -1,27 +1,35 @@
 <?php
-include_once("newincludes/newconfig.php");
+// ✅ Database connection
+$host = 'localhost';
+$db = 'navsclubs';
+$user = 'root';
+$pass = '';
+$conn = new mysqli($host, $user, $pass, $db);
 
-if (isset($_REQUEST['delete'])) {
-    $sql = "DELETE FROM lessons WHERE lesson_id={$_REQUEST['id']}";
-    if ($conn->query($sql) === TRUE) {
-        echo '<meta http-equiv="refresh" content="0;URL=?deleted"/>';
-    } else {
-        echo "Delete Failed";
-    }
+if ($conn->connect_error) {
+    die('❌ Connection failed: ' . $conn->connect_error);
 }
 
-// Fetch all lessons
-$sql = "SELECT * FROM course_lessons";
-$result = $conn->query($sql);
+// ✅ Capture form data
+$section_name = $_POST['section_name'] ?? '';
 
-if ($result->num_rows > 0) {
-    while ($row = $result->fetch_assoc()) {
-        // Process each lesson
-        $lesson_id = $row['lesson_id'];
-        $lesson_name = $row['lesson_name'];
-        // Add your processing logic here
-    }
+// ✅ Auto-calculate the next position
+$check_sql = "SELECT COUNT(*) AS total FROM course_sections";
+$result = $conn->query($check_sql);
+$row = $result->fetch_assoc();
+$next_position = $row['total'] + 1;  // Increment position
+
+// ✅ Insert the new section
+$insert_sql = "INSERT INTO course_sections (section_name, position) VALUES (?, ?)";
+$stmt = $conn->prepare($insert_sql);
+$stmt->bind_param("si", $section_name, $next_position);
+
+if ($stmt->execute()) {
+    echo "✅ Section added successfully.";
 } else {
-    echo '<div class="alert alert-dark mt-4" role="alert">No Lessons Found!</div>';
+    echo "❌ Error: " . $stmt->error;
 }
+
+$stmt->close();
+$conn->close();
 ?>
