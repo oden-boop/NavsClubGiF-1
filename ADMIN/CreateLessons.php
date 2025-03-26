@@ -190,7 +190,7 @@ if (!$course_id || !$course_name) {
 
 <script>
 $(document).ready(function () {
-    // ✅ Load sections on page load
+    // ✅ Load sections with lessons on page load
     loadSections();
 
     // ✅ Form submission handler for adding sections
@@ -204,7 +204,7 @@ $(document).ready(function () {
             success: function (response) {
                 alert(response);
                 $('#addSectionModal').modal('hide');
-                loadSections();
+                loadSections();  // Reload sections after adding
             },
             error: function () {
                 alert('❌ Failed to add section');
@@ -212,7 +212,7 @@ $(document).ready(function () {
         });
     });
 
-    // ✅ Function to load sections with course_id
+    // ✅ Function to load sections with course_id and lessons
     function loadSections() {
         $.ajax({
             url: 'fetchCourse_sections.php',
@@ -221,22 +221,23 @@ $(document).ready(function () {
             dataType: 'json',
             success: function (data) {
                 let html = '';
+
                 if (data.length > 0) {
                     data.forEach(function (section) {
                         html += `
                             <div class="section-card" data-section-id="${section.section_id}">
-                                <div class="section-header" onclick="toggleSection(this)">
+                                <div class="section-header" onclick="toggleSection(this, ${section.section_id})">
                                     <h4>${section.section_name} (Position: ${section.position})</h4>
                                     <span class="arrow">▼</span>
                                 </div>
-                                
+
                                 <!-- ✅ Lesson Container -->
-                                <div class="lesson-container">
+                                <div class="lesson-container" id="lesson-container-${section.section_id}">
                                     <div class="btn-add-lesson" 
                                          onclick="openLessonModal('<?= $course_name ?>', ${section.section_id}, <?= $course_id ?>)">
                                         ➕ Add Lesson
                                     </div>
-                                    <p>Lesson content goes here...</p>
+                                    <div class="loading-text">Loading lessons...</div> 
                                 </div>
                             </div>
                         `;
@@ -244,6 +245,7 @@ $(document).ready(function () {
                 } else {
                     html = '<p>No sections found.</p>';
                 }
+
                 $('#sectionsContainer').html(html);
             },
             error: function () {
@@ -252,35 +254,91 @@ $(document).ready(function () {
         });
     }
 
-    // ✅ Expand/Collapse Section (Dropdown Logic)
-    window.toggleSection = function (el) {
+    // ✅ Expand/Collapse Section and load lessons dynamically
+    window.toggleSection = function (el, sectionId) {
         const card = $(el).closest('.section-card');
         const lessonContainer = card.find('.lesson-container');
 
-        lessonContainer.slideToggle(300);   // Toggle lesson-container visibility
+        lessonContainer.slideToggle(300);
         card.toggleClass('collapsed');
+
+        // ✅ Load lessons for the section if not already loaded
+        if (!lessonContainer.hasClass('loaded')) {
+            loadLessons(sectionId);
+            lessonContainer.addClass('loaded');
+        }
     }
 
-    // ✅ Open Lesson Modal (Pass course name, section ID, and course ID)
+    // ✅ Function to load lessons dynamically with 422 error handling
+    function loadLessons(sectionId) {
+        $.ajax({
+            url: 'fetchCourse_sectionFunction.php',
+            type: 'GET',
+            data: { section_id: sectionId },
+            dataType: 'json',
+            success: function (lessons) {
+                let html = '';
+
+                if (lessons.length > 0) {
+                    lessons.forEach(function (lesson) {
+                        // ✅ Handle invalid playbackInfo (Error 422)
+                        let videoHtml = '';
+                        if (lesson.playbackInfo && lesson.playbackInfo !== '') {
+                            videoHtml = `
+                                <iframe 
+                                    src="https://player.vdocipher.com/v2/?otp=${lesson.otp}&playbackInfo=${lesson.playbackInfo}" 
+                                    width="100%" 
+                                    height="400" 
+                                    frameborder="0" 
+                                    allowfullscreen>
+                                </iframe>`;
+                        } else {
+                            videoHtml = `
+                                <div class="error-msg">
+                                    ❌ Video playback failed. Invalid playback info.
+                                </div>`;
+                        }
+
+                        html += `
+                            <div class="lesson-card">
+                                <h5>📚 ${lesson.lesson_name}</h5>
+                                <p>${lesson.description}</p>
+                                ${videoHtml}
+                            </div>
+                        `;
+                    });
+                } else {
+                    html = '<p>No lessons found.</p>';
+                }
+
+                $(`#lesson-container-${sectionId}`).html(html);
+            },
+            error: function () {
+                alert('❌ Failed to load lessons');
+            }
+        });
+    }
+
+    // ✅ Open Lesson Modal
     window.openLessonModal = function (courseName, sectionId, courseId) {
-        console.log('Course ID:', courseId);    
-        console.log('Course Name:', courseName);  
+        console.log('Course ID:', courseId);
+        console.log('Course Name:', courseName);
 
         // Fill form inputs with course and section details
-        $('#courseId').val(courseId);           
-        $('#sectionId').val(sectionId);         
-        $('#courseName').val(courseName);       
+        $('#courseId').val(courseId);
+        $('#sectionId').val(sectionId);
+        $('#courseName').val(courseName);
         $('#lessonModal').modal('show');
     }
 
-    // ✅ Form submission handler using FormData
+    // ✅ Form submission handler using FormData for lessons
     $('#addLessonForm').submit(function (e) {
         e.preventDefault();
 
         const formData = new FormData(this);
-        
+
         $.ajax({
-            url: 'CourseLessonSecFunction.php',  // ✅ Insert into Lessons and Link Table
+            url: 'CourseLessonSecFunction.php',
             type: 'POST',
             data: formData,
             contentType: false,
@@ -310,8 +368,8 @@ $(document).ready(function () {
                     console.log('✅ API Response:', response);
 
                     if (response.description || response.thumbnail) {
-                        $('#lessonDescription').val(response.description ?? '');  
-                        $('#thumbnail').val(response.thumbnail ?? '');  
+                        $('#lessonDescription').val(response.description ?? '');
+                        $('#thumbnail').val(response.thumbnail ?? '');
                         console.log('✅ Details fetched successfully!');
                     } else {
                         alert('❌ No details found or invalid video ID.');
@@ -325,7 +383,6 @@ $(document).ready(function () {
         }
     });
 });
-
 </script>
 
 </body>
