@@ -19,7 +19,7 @@ try {
             cs.section_name, 
             cs.position
         FROM course_sections cs
-        INNER JOIN courses c ON c.course_name = cs.section_name
+        INNER JOIN courses c ON c.course_id = cs.course_id  -- ✅ FIXED JOIN
         WHERE c.course_id = ?
     ");
 
@@ -33,10 +33,13 @@ try {
         $sections[] = $row;
     }
 
+    // ✅ Close statement and connection
     $stmt->close();
     $conn->close();
 
-    echo json_encode($sections);
+    // ✅ Return JSON response
+    echo json_encode($sections, JSON_PRETTY_PRINT);
+
 } catch (Exception $e) {
     echo json_encode(['error' => '❌ Server error: ' . $e->getMessage()]);
 }
