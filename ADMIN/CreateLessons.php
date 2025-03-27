@@ -165,7 +165,7 @@
                     <!-- ✅ Description -->
                     <div class="mb-3">
                         <label for="lessonDescription" class="form-label">Description</label>
-                        <textarea id="lessonDescription" name="lesson_description" class="form-control" placeholder="Enter description" required></textarea>
+                        <textarea id="lessonDescription" name="lesson_description" class="form-control" placeholder="Enter description" readonly></textarea>
                     </div>
 
                     <!-- ✅ Submit Button -->
@@ -198,13 +198,19 @@ $(document).ready(function () {
             url: 'CreateLessonsFunction.php',
             type: 'POST',
             data: $(this).serialize(),
+            dataType: 'json',   // Expect JSON response
             success: function (response) {
-                alert(response);
-                $('#addSectionModal').modal('hide');
-                loadSections();
+                if (response.success) {
+                    alert(`✅ ${response.success}`);
+                    $('#addSectionModal').modal('hide');  // Close modal
+                    loadSections();                      // Reload sections
+                } else {
+                    alert(`❌ ${response.error}`);        // Display error message
+                }
             },
-            error: function () {
-                alert('❌ Failed to add section');
+            error: function (xhr) {
+                console.error('❌ AJAX Error:', xhr.responseText);
+                alert(`❌ Failed to add section: ${xhr.responseText}`);
             }
         });
     });
@@ -220,7 +226,6 @@ $(document).ready(function () {
             alert('❌ Missing course ID or course name');
             return;
         }
-
 
         $.ajax({
             url: 'fetchCourse_sections.php',
@@ -287,6 +292,12 @@ $(document).ready(function () {
                                 <p>🎥 Video ID: ${lesson.video_id || '-'}</p>
                                 <p>📚 Section: ${sectionName} | Position: ${position}</p>
                                 <p>🎓 Course: ${courseName}</p>
+                                
+                                <!-- ✅ Edit and Delete Buttons -->
+                                <div class="lesson-actions">
+                                    <button onclick="editLesson(${lesson.lesson_id})" class="btn btn-warning">✏️ Edit</button>
+                                    <button onclick="deleteLesson(${lesson.lesson_id})" class="btn btn-danger">🗑️ Delete</button>
+                                </div>
                             </div>`;
                     });
                 } else {
@@ -312,7 +323,7 @@ $(document).ready(function () {
         });
     }
 
-    // ✅ Expand/1lapse Section (Dropdown Logic)
+    // ✅ Expand/Collapse Section (Dropdown Logic)
     window.toggleSection = function (el) {
         const card = $(el).closest('.section-card');
         const lessonContainer = card.find('.lesson-container');
@@ -352,7 +363,7 @@ $(document).ready(function () {
         const formData = $(this).serialize() + `&section_id=${sectionId}&course_id=${courseId}`;
 
         $.ajax({
-            url: 'FetchSection_course.php',
+            url: 'CreateCourseFunction.php',
             type: 'POST',
             data: formData,
             success: function (response) {
@@ -365,7 +376,48 @@ $(document).ready(function () {
             }
         });
     });
+
+    // ✅ AJAX to fetch VdoCipher details
+    $('#videoId').on('blur', function () {
+        const videoId = $(this).val().trim();
+
+        if (!videoId) {
+            alert('❌ Please enter a video ID');
+            return;
+        }
+
+        console.log('🔍 Fetching video details for:', videoId);
+
+        $.ajax({
+            url: 'fetch_vdocipher_details.php',
+            type: 'GET',
+            data: { video_id: videoId },
+            dataType: 'json',
+            success: function (response) {
+                console.log('🔄 Response from server:', response);
+
+                if (response && response.video_id) {
+                    $('#lessonDescription').val(response.description || 'No description available');
+                    $('#thumbnail').val(response.thumbnail || '');
+                    console.log('✅ VdoCipher details fetched successfully!');
+                } else {
+                    alert(response.error || '❌ No details found or invalid video ID.');
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('❌ AJAX Error:', status, error);
+                console.error('❌ Server Response:', xhr.responseText);
+                alert('❌ Failed to fetch VdoCipher details. Check the console for more info.');
+            }
+        });
+    });
+
+    // ✅ Clear Modal Fields on Close
+    $('#lessonModal').on('hidden.bs.modal', function () {
+        $(this).find('input, textarea').val('');
+    });
 });
+
 
 
 </script>

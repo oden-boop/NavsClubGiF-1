@@ -13,33 +13,35 @@ if (!$section_id || !$course_id) {
 }
 
 try {
-    // ✅ Use the correct table name `course_sections`
+    // ✅ Fetch lessons with section details
     $stmt = $conn->prepare("
         SELECT 
             l.lesson_id, 
             l.lesson_name, 
             l.video_id, 
-            l.lesson_description, 
+            l.description,   -- Ensure column exists
             l.thumbnail,
             cs.section_name,
             cs.position
         FROM lessons l
-        INNER JOIN course_sections cs ON l.section_id = cs.section_id  -- ✅ Use course_sections
+        INNER JOIN course_sections cs ON l.section_id = cs.section_id
         WHERE l.section_id = ? AND l.course_id = ?
     ");
-    
+
     $stmt->bind_param('ii', $section_id, $course_id);
     $stmt->execute();
-    
+
     $result = $stmt->get_result();
-    
     $lessons = [];
+
     while ($row = $result->fetch_assoc()) {
         $lessons[] = $row;
     }
-    
+
+    $stmt->close();
+    $conn->close();
+
     echo json_encode($lessons);
-    
 } catch (Exception $e) {
     echo json_encode(['error' => '❌ Server error: ' . $e->getMessage()]);
 }
