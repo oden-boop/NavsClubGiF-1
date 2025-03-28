@@ -159,15 +159,21 @@
 
                         <!-- ✅ Video ID -->
                         <div class="mb-3">
-                            <label for="videoId" class="form-label">Video ID</label>
-                            <input type="text" id="videoId" name="video_id" class="form-control" placeholder="Enter video ID" required>
-                        </div>
+    <label for="videoId" class="form-label">Video ID</label>
+    <input type="text" id="videoId" name="video_id" class="form-control" placeholder="Enter video ID" required>
+</div>
 
-                        <!-- ✅ Description -->
-                        <div class="mb-3">
-                            <label for="lessonDescription" class="form-label">Description</label>
-                            <textarea id="lessonDescription" name="lesson_description" class="form-control" placeholder="Enter description" readonly></textarea>
-                        </div>
+<!-- ✅ Description (Autofilled) -->
+<div class="mb-3">
+    <label for="lessonDescription" class="form-label">Description</label>
+    <textarea id="lessonDescription" name="lesson_description" class="form-control" placeholder="Description will appear here" readonly></textarea>
+</div>
+
+<!-- ✅ Video Thumbnail (Autofilled) -->
+<div class="mb-3 text-center">
+    <img id="videoThumbnail" src="" alt="Video Thumbnail" class="img-fluid rounded shadow" style="max-width: 300px; display: none;">
+</div>
+
 
                         <!-- ✅ Submit Button -->
                         <div class="text-center">
@@ -304,6 +310,42 @@
     });
 
 });
+$(document).ready(function () {
+    $("#videoId").on("input", function () {
+        let videoId = $(this).val().trim(); // Get video ID from input
+        
+        if (videoId.length === 32) { // ✅ VdoCipher Video ID is 32 characters long
+            $.ajax({
+                url: 'fetch_vdocipher_details.php',
+                type: 'GET',
+                data: { video_id: videoId },
+                dataType: 'json',
+                success: function (response) {
+                    if (response.error) {
+                        console.error("❌ Error:", response.error);
+                        $("#lessonDescription").val("Invalid or missing video details.");
+                        $("#videoThumbnail").attr("src", "").hide();
+                        return;
+                    }
+
+                    // ✅ Autofill Description & Thumbnail
+                    $("#lessonDescription").val(response.description);
+                    $("#videoThumbnail").attr("src", response.thumbnail).show();
+                },
+                error: function (xhr, status, error) {
+                    console.error("❌ AJAX Error:", error);
+                    $("#lessonDescription").val("Failed to fetch video details.");
+                    $("#videoThumbnail").attr("src", "").hide();
+                }
+            });
+        } else {
+            // ✅ Reset Fields when input is cleared or invalid
+            $("#lessonDescription").val("");
+            $("#videoThumbnail").attr("src", "").hide();
+        }
+    });
+});
+
 
 </script>
 
