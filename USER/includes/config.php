@@ -34,7 +34,7 @@ function isAuthenticated() {
 
 // Redirect user if not logged in
 if (!isAuthenticated()) {
-    header("Location: /NavsClubGIF/NavsClubGIF/LOGIN/LoginAccount.php");
+    header("Location: /NewNavsClub-GIF/NavsClubGiF-1/LOGIN/LoginAccount.php");
     exit();
 }
 

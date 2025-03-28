@@ -1,80 +1,35 @@
 <?php
 // ✅ Database connection
-include_once("newincludes/newconfig.php");
+$host = 'localhost';
+$db = 'navsclubs';
+$user = 'root';
+$pass = '';
+$conn = new mysqli($host, $user, $pass, $db);
 
-header('Content-Type: application/json');
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // ✅ Fetch and sanitize input
-    $course_id = $_POST['course_id'] ?? null;
-    $section_id = $_POST['section_id'] ?? null;
-    $lesson_name = $_POST['lesson_name'] ?? '';
-    $video_id = $_POST['video_id'] ?? '';
-    $description = $_POST['description'] ?? '';
-    $thumbnail = $_POST['thumbnail'] ?? '';
-    $position = $_POST['position'] ?? 1; // Default lesson position
-
-    // ✅ Validation: Ensure required fields are provided
-    if (!$course_id || !$section_id || empty($lesson_name) || empty($video_id)) {
-        echo json_encode(['error' => '❌ Missing required fields']);
-        exit;
-    }
-
-    try {
-        // ✅ Check if section exists in course_sections
-        $sectionCheckStmt = $conn->prepare("
-            SELECT section_id FROM course_sections WHERE section_id = :section_id
-        ");
-        $sectionCheckStmt->execute([':section_id' => $section_id]);
-        $section = $sectionCheckStmt->fetch(PDO::FETCH_ASSOC);
-
-        if (!$section) {
-            echo json_encode(['error' => '❌ Invalid section ID.']);
-            exit;
-        }
-
-        // ✅ Check if lesson position is already occupied
-        $checkStmt = $conn->prepare("
-            SELECT 1 FROM lessons WHERE section_id = :section_id AND position = :position
-        ");
-        $checkStmt->execute([
-            ':section_id' => $section_id,
-            ':position' => $position
-        ]);
-
-        if ($checkStmt->fetch()) {
-            echo json_encode(['error' => '❌ A lesson already exists in this position within this section.']);
-            exit;
-        }
-
-        // ✅ Insert Lesson
-        $sql = "
-            INSERT INTO lessons (
-                course_id, section_id, lesson_name, video_id, 
-                description, thumbnail, position
-            ) VALUES (
-                :course_id, :section_id, :lesson_name, :video_id, 
-                :description, :thumbnail, :position
-            )
-        ";
-
-        $stmt = $conn->prepare($sql);
-        $stmt->bindParam(':course_id', $course_id, PDO::PARAM_INT);
-        $stmt->bindParam(':section_id', $section_id, PDO::PARAM_INT);
-        $stmt->bindParam(':lesson_name', $lesson_name, PDO::PARAM_STR);
-        $stmt->bindParam(':video_id', $video_id, PDO::PARAM_STR);
-        $stmt->bindParam(':description', $description, PDO::PARAM_STR);
-        $stmt->bindParam(':thumbnail', $thumbnail, PDO::PARAM_STR);
-        $stmt->bindParam(':position', $position, PDO::PARAM_INT);
-
-        if ($stmt->execute()) {
-            echo json_encode(['success' => '✅ Lesson inserted successfully at position ' . $position]);
-        } else {
-            echo json_encode(['error' => '❌ Failed to insert lesson']);
-        }
-
-    } catch (PDOException $e) {
-        echo json_encode(['error' => '❌ Database error: ' . $e->getMessage()]);
-    }
+if ($conn->connect_error) {
+    die('❌ Connection failed: ' . $conn->connect_error);
 }
+
+// ✅ Capture form data
+$section_name = $_POST['section_name'] ?? '';
+
+// ✅ Auto-calculate the next position
+$check_sql = "SELECT COUNT(*) AS total FROM course_sections";
+$result = $conn->query($check_sql);
+$row = $result->fetch_assoc();
+$next_position = $row['total'] + 1;  // Increment position
+
+// ✅ Insert the new section
+$insert_sql = "INSERT INTO course_sections (section_name, position) VALUES (?, ?)";
+$stmt = $conn->prepare($insert_sql);
+$stmt->bind_param("si", $section_name, $next_position);
+
+if ($stmt->execute()) {
+    echo "✅ Section added successfully.";
+} else {
+    echo "❌ Error: " . $stmt->error;
+}
+
+$stmt->close();
+$conn->close();
 ?>

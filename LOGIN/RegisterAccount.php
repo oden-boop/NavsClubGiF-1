@@ -22,16 +22,18 @@
 
         .container {
             background: white;
-            padding: 20px;
+            padding: 25px;
             width: 100%;
-            max-width: 400px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 450px;
+            border-radius: 10px;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
         }
 
         h3 {
             text-align: center;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            font-size: 22px;
+            font-weight: bold;
         }
 
         label {
@@ -46,6 +48,7 @@
             margin-top: 5px;
             border: 1px solid #ccc;
             border-radius: 5px;
+            font-size: 14px;
         }
 
         input:focus, select:focus {
@@ -56,6 +59,7 @@
         .row {
             display: flex;
             gap: 10px;
+            margin-top: 10px;
         }
 
         .row div {
@@ -65,27 +69,43 @@
         .checkbox-container {
             display: flex;
             align-items: center;
-            margin-top: 10px;
+            margin-top: 15px;
+            font-size: 14px;
         }
 
         .checkbox-container input {
             width: auto;
-            margin-right: 10px;
+            margin-right: 8px;
         }
 
         .btn {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             background: #007bff;
             color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             margin-top: 15px;
+            font-size: 16px;
+            font-weight: bold;
         }
 
         .btn:hover {
             background: #0056b3;
+        }
+
+        .signup-link {
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+            text-decoration: none;
+            color: #007bff;
+        }
+
+        .signup-link:hover {
+            text-decoration: underline;
         }
 
         .message {
@@ -100,8 +120,9 @@
 
 <div class="container">
     <h3>Sign Up</h3>
-    <form action="Sign-upFunction.php" method="POST">
-    <label for="email">Email Address</label>
+    <form id="signupForm" action="Sign-upFunction.php" method="POST">
+        
+        <label for="email">Email Address</label>
         <input type="email" id="email" name="email" placeholder="Enter your email" required>
 
         <label for="password">Password</label>
@@ -112,13 +133,14 @@
 
         <div class="row">
             <div>
-                <label for="first_name">First Name</label>
-                <input type="text" id="fullname" name="fullname" placeholder="Full name" required>
+                <label for="fullname">Full Name</label>
+                <input type="text" id="fullname" name="fullname" placeholder="Full Name" required>
+            </div>
+            <div>
+                <label for="nickname">Nickname</label>
+                <input type="text" id="nickname" name="nickname" placeholder="Enter your nickname">
             </div>
         </div>
-
-        <label for="nickname">Nickname</label>
-        <input type="text" id="nickname" name="nickname" placeholder="Enter your nickname">
 
         <label for="rank">What is your current rank?</label>
         <select id="rank" name="rank" required>
@@ -135,8 +157,7 @@
         </div>
 
         <button type="submit" class="btn">Sign Up</button>
-        <a href="LoginAccount.php" class="signup-link">have an account? Login</a>
-
+        <a href="LoginAccount.php" class="signup-link">Have an account? Login</a>
     </form>
 
     <div class="message" id="message"></div>
@@ -148,7 +169,7 @@
 
         const formData = new FormData(this);
 
-        fetch("LoginAccount.php", {
+        fetch("Sign-upFunction.php", {
             method: "POST",
             body: formData
         })

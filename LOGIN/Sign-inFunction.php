@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
                 header("Location: http://localhost/Repair-Shop-Locator-new/ADMIN/AppointmentNotifications.php");
                 exit();
             } else {
-                header("Location: http://localhost/NewNavsClubs-GIF/USER/IndexHome.php");
+                header("Location: http://localhost/NewNavsClub-GIF/NavsClubGiF-1/USER/IndexHome.php");
                 exit();
             }
         } else {

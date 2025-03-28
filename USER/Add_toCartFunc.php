@@ -9,7 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 // Required fields
-$requiredFields = ['course_name', 'course_by', 'price', 'course_level', 'course_duration'];
+$requiredFields = ['course_id', 'course_price'];
 
 foreach ($requiredFields as $field) {
     if (!isset($_POST[$field]) || empty(trim($_POST[$field]))) {
@@ -19,24 +19,23 @@ foreach ($requiredFields as $field) {
 }
 
 // Assign variables & sanitize inputs
-$course_name = trim($_POST['course_name']);
-$course_by = trim($_POST['course_by']);
-$price = filter_var($_POST['price'], FILTER_VALIDATE_FLOAT);
-$course_level = trim($_POST['course_level']);
-$course_duration = trim($_POST['course_duration']);
+$course_id = intval($_POST['course_id']);
+$course_price = filter_var($_POST['course_price'], FILTER_VALIDATE_FLOAT);
+$created_at = date('Y-m-d H:i:s'); // Capture current timestamp
+$status = 2; // Default status set to 2
 
 // Validate numerical values
-if ($price === false || $price <= 0) {
-    echo json_encode(['success' => false, 'message' => 'Invalid price value.']);
+if ($course_price === false || $course_price <= 0) {
+    echo json_encode(['success' => false, 'message' => 'Invalid course price value.']);
     exit;
 }
 
-// Prepare SQL query
-$query = "INSERT INTO cart (course_name, course_by, price, course_level, course_duration) 
-          VALUES (?, ?, ?, ?, ?)";
+// Prepare SQL query to insert into `course_cart`
+$query = "INSERT INTO course_cart (course_id, course_price, created_at, status) 
+          VALUES (?, ?, ?, ?)";
 
 if ($stmt = $conn->prepare($query)) {
-    $stmt->bind_param("ssdss", $course_name, $course_by, $price, $course_level, $course_duration);
+    $stmt->bind_param("idsi", $course_id, $course_price, $created_at, $status);
     
     if ($stmt->execute()) {
         echo json_encode(['success' => true, 'message' => 'Course added to cart successfully.']);

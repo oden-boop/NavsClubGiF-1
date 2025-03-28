@@ -35,8 +35,8 @@ if (!isset($_POST['course_id'])) {
 $course_id = intval($_POST['course_id']);
 $cart_id = intval($_POST['cart_id']);
 
-// 🔎 Step 3: Fetch Course Details
-$sql_course = "SELECT course_name, course_price, course_instructor FROM courses WHERE course_id = ?";
+// 🔎 Step 3: Fetch Course Details (Removed course_instructor)
+$sql_course = "SELECT course_name, course_price FROM courses WHERE course_id = ?";
 $stmt_course = $conn->prepare($sql_course);
 $stmt_course->bind_param("i", $course_id);
 $stmt_course->execute();
@@ -50,19 +50,18 @@ if ($result_course->num_rows == 0) {
 $course = $result_course->fetch_assoc();
 $course_name = $course['course_name'];
 $course_price = $course['course_price'];
-$course_instructor = $course['course_instructor'];
 
 // 🔹 Step 4: Auto-generate `order_id`
 $order_id = uniqid('ORD_');
 $_SESSION['order_id'] = $order_id; // Store order ID in session
 
-// 🔥 Step 5: Insert data into `checkout_course`
+// 🔥 Step 5: Insert data into `checkout_course` (Removed course_instructor)
 $insert_checkout = "
     INSERT INTO checkout_course (
         usersid, order_id, course_id, course_name, 
-        course_price, course_instructor, status
+        course_price, status
     ) 
-    VALUES (?, ?, ?, ?, ?, ?, 2)";
+    VALUES (?, ?, ?, ?, ?, 2)";
     
 $stmt_checkout = $conn->prepare($insert_checkout);
 
@@ -70,9 +69,9 @@ if (!$stmt_checkout) {
     die("SQL Error: " . $conn->error); // Debugging in case of query issue
 }
 
-$stmt_checkout->bind_param("isisss", 
+$stmt_checkout->bind_param("isiss", 
     $usersid, $order_id, $course_id, 
-    $course_name, $course_price, $course_instructor
+    $course_name, $course_price
 );
 
 if ($stmt_checkout->execute()) {
@@ -85,7 +84,7 @@ if ($stmt_checkout->execute()) {
     echo "<script>
         alert('✅ Proceeding to Payment...');
         setTimeout(function() {
-            window.location.href = 'CourseForCheckout.php';
+            window.location.href = 'CourseAddedtoCart.php';
         }, 2000);
     </script>";
 } else {

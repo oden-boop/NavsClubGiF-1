@@ -16,103 +16,125 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $course_id = intval($_POST['id']);
         deleteCourse($conn, $course_id);
     }
+
+    if (isset($_POST['updateCourseBtn'])) {
+        $msg = updateCourse($conn);
+    }
 }
 
 $result = fetchCourses($conn);
 ?>
 
-<div class="container mt-4">
-    <h3 class="text-center text-dark">Course Management</h3>
-    <hr class="mb-4">
+<div class="container mt-5">
+    <h3 class="text-center text-primary fw-bold">Course Management</h3>
+    <hr class="mb-4 border-primary">
 
+    <!-- Add Course Button -->
+    <div class="text-end mb-3">
+        <button class="btn btn-primary shadow-lg rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#addCourseModal">
+            <i class="uil uil-plus-circle"></i> Add Course
+        </button>
+    </div>
+
+    <!-- Course Table -->
     <?php if ($result && $result->num_rows > 0) { ?>
-        <table class="table table-bordered text-center">
-            <thead class="table-dark">
-                <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Level</th>
-                    <th>Price</th>
-                    <th>Thumbnail</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php while ($row = $result->fetch_assoc()) { ?>
+        <div class="table-responsive">
+            <table class="table table-striped table-hover text-center shadow-lg rounded-3 overflow-hidden bg-white border border-primary">
+                <thead class="bg-primary text-white">
                     <tr>
-                        <td><?= htmlspecialchars($row['course_id']); ?></td>
-                        <td><?= htmlspecialchars($row['course_name']); ?></td>
-                        <td><?= htmlspecialchars($row['course_level']); ?></td>
-                        <td>$<?= htmlspecialchars($row['course_price']); ?></td>
-                        <td>
-                            <img src="<?= htmlspecialchars($row['course_image']); ?>" alt="Thumbnail" width="60" class="img-thumbnail">
-                        </td>
-                        <td>
-                            <!-- ✅ Send course_id & course_name -->
-                            <form action="CreateLessons.php" method="GET" class="d-inline">
-                                <input type="hidden" name="course_id" value="<?= htmlspecialchars($row['course_id']); ?>">
-                                <input type="hidden" name="course_name" value="<?= htmlspecialchars($row['course_name']); ?>">
-                                <button type="submit" class="btn btn-success btn-sm">
-                                    <i class="uil uil-eye"></i> View
-                                </button>
-                            </form>
-
-                            <form action="" method="POST" class="d-inline">
-                                <input type="hidden" name="id" value="<?= htmlspecialchars($row['course_id']); ?>">
-                                <button type="submit" class="btn btn-danger btn-sm" name="delete">
-                                    <i class="uil uil-trash-alt"></i> Delete
-                                </button>
-                            </form>
-                        </td>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Level</th>
+                        <th>Price</th>
+                        <th>Thumbnail</th>
+                        <th>Actions</th>
                     </tr>
-                <?php } ?>
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    <?php while ($row = $result->fetch_assoc()) { ?>
+                        <tr class="align-middle">
+                            <td class="fw-bold text-dark"> <?= htmlspecialchars($row['course_id']); ?> </td>
+                            <td class="fw-bold text-dark"> <?= htmlspecialchars($row['course_name']); ?> </td>
+                            <td class="text-muted"> <?= htmlspecialchars($row['course_level']); ?> </td>
+                            <td class="text-success fw-bold">$<?= htmlspecialchars($row['course_price']); ?></td>
+                            <td>
+                                <img src="<?= htmlspecialchars($row['course_image']); ?>" alt="Thumbnail" width="60" class="rounded shadow-sm border border-primary">
+                            </td>
+                            <td>
+                                <form action="CreateLessons.php" method="GET" class="d-inline">
+                                    <input type="hidden" name="course_id" value="<?= htmlspecialchars($row['course_id']); ?>">
+                                    <button type="submit" class="btn btn-primary btn-sm shadow rounded-pill px-3">
+                                        <i class="uil uil-eye"></i> View
+                                    </button>
+                                </form>
+
+                                <button class="btn btn-warning btn-sm shadow rounded-pill px-3 edit-course" data-bs-toggle="modal" data-bs-target="#updateCourseModal"
+                                    data-id="<?= $row['course_id']; ?>" data-name="<?= $row['course_name']; ?>" data-desc="<?= $row['course_desc']; ?>"
+                                    data-price="<?= $row['course_price']; ?>" data-level="<?= $row['course_level']; ?>">
+                                    <i class="uil uil-pen"></i> Edit
+                                </button>
+
+                                <form action="" method="POST" class="d-inline">
+                                    <input type="hidden" name="id" value="<?= htmlspecialchars($row['course_id']); ?>">
+                                    <button type="submit" class="btn btn-danger btn-sm shadow rounded-pill px-3" name="delete">
+                                        <i class="uil uil-trash-alt"></i> Delete
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    <?php } ?>
+                </tbody>
+            </table>
+        </div>
     <?php } else { ?>
         <p class="text-muted text-center">No courses found.</p>
     <?php } ?>
 </div>
 
-
-<div class="container mt-5">
-    <div class="card shadow p-4">
-        <h4 class="text-center text-primary">Add New Course</h4>
-        <form action="" method="POST" enctype="multipart/form-data" id="courseForm">
-            <?php if (isset($msg)) echo $msg; ?>
-
-            <div class="mb-3">
-                <label class="form-label">Course Name</label>
-                <input type="text" id="course_name" name="course_name" class="form-control" required>
+<!-- Add Course Modal -->
+<div class="modal fade" id="addCourseModal" tabindex="-1" aria-labelledby="addCourseModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content shadow-lg rounded-4 border border-primary">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Add New Course</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-
-            <div class="mb-3">
-                <label class="form-label">Course Description</label>
-                <textarea id="course_desc" name="course_desc" class="form-control" required></textarea>
+            <div class="modal-body bg-white">
+                <form action="" method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label">Course Name</label>
+                        <input type="text" name="course_name" class="form-control rounded-3 border-primary" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Course Description</label>
+                        <textarea name="course_desc" class="form-control rounded-3 border-primary" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Course Price</label>
+                        <input type="number" name="course_price" class="form-control rounded-3 border-primary" min="0" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Level</label>
+                        <select name="course_level" class="form-select rounded-3 border-primary" required>
+                            <option value="Beginner">Beginner</option>
+                            <option value="Intermediate">Intermediate</option>
+                            <option value="Advanced">Advanced</option>
+                        </select>
+                    </div>
+                    <div class="text-center">
+                        <button class="btn btn-primary btn-sm shadow-lg rounded-pill px-4" type="submit" name="courseSubmitBtn">Submit</button>
+                        <button type="button" class="btn btn-secondary btn-sm shadow-lg rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </form>
             </div>
-
-            <div class="mb-3">
-                <label class="form-label">Course Price</label>
-                <input type="number" id="course_price" name="course_price" class="form-control" min="0" required>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Level</label>
-                <select class="form-select" name="course_level" id="course_level" required>
-                    <option value="Beginner">Beginner</option>
-                    <option value="Intermediate">Intermediate</option>
-                    <option value="Advanced">Advanced</option>
-                </select>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Thumbnail</label>
-                <input type="file" id="course_img" name="course_img" class="form-control" accept=".jpg, .jpeg, .png, .gif" required>
-            </div>
-
-            <div class="text-center">
-                <button class="btn btn-primary btn-sm" type="submit" id="courseSubmitBtn" name="courseSubmitBtn">Submit</button>
-                <a href="Course.php" class="btn btn-secondary btn-sm">Close</a>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
+<!-- Bootstrap 5 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Bootstrap Icons (Optional) -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+
+<!-- Bootstrap 5 JavaScript (for modals, tooltips, etc.) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
