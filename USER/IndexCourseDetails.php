@@ -63,7 +63,7 @@ $course = $result->fetch_assoc();
             try {
                 let json = JSON.parse(data);
                 if (json.status === "success") {
-                    window.location.href = "CourseAddedtoCart.php"; 
+                    window.location.href = "AddingtoCartCourse.php"; 
                 } else {
                     document.getElementById("cartMessage").innerText = json.message;
                 }

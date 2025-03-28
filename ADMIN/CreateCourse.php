@@ -11,14 +11,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['courseSubmitBtn'])) {
         $msg = insertCourse($conn);
     }
-
     if (isset($_POST['delete']) && isset($_POST['id'])) {
         $course_id = intval($_POST['id']);
         deleteCourse($conn, $course_id);
-    }
-
-    if (isset($_POST['updateCourseBtn'])) {
-        $msg = updateCourse($conn);
     }
 }
 
@@ -29,17 +24,15 @@ $result = fetchCourses($conn);
     <h3 class="text-center text-primary fw-bold">Course Management</h3>
     <hr class="mb-4 border-primary">
 
-    <!-- Add Course Button -->
     <div class="text-end mb-3">
         <button class="btn btn-primary shadow-lg rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#addCourseModal">
             <i class="uil uil-plus-circle"></i> Add Course
         </button>
     </div>
 
-    <!-- Course Table -->
     <?php if ($result && $result->num_rows > 0) { ?>
         <div class="table-responsive">
-            <table class="table table-striped table-hover text-center shadow-lg rounded-3 overflow-hidden bg-white border border-primary">
+            <table class="table table-striped table-hover text-center shadow-lg rounded-3 bg-white border border-primary">
                 <thead class="bg-primary text-white">
                     <tr>
                         <th>ID</th>
@@ -52,10 +45,10 @@ $result = fetchCourses($conn);
                 </thead>
                 <tbody>
                     <?php while ($row = $result->fetch_assoc()) { ?>
-                        <tr class="align-middle">
-                            <td class="fw-bold text-dark"> <?= htmlspecialchars($row['course_id']); ?> </td>
-                            <td class="fw-bold text-dark"> <?= htmlspecialchars($row['course_name']); ?> </td>
-                            <td class="text-muted"> <?= htmlspecialchars($row['course_level']); ?> </td>
+                        <tr>
+                            <td><?= htmlspecialchars($row['course_id']); ?></td>
+                            <td><?= htmlspecialchars($row['course_name']); ?></td>
+                            <td><?= htmlspecialchars($row['course_level']); ?></td>
                             <td class="text-success fw-bold">$<?= htmlspecialchars($row['course_price']); ?></td>
                             <td>
                                 <img src="<?= htmlspecialchars($row['course_image']); ?>" alt="Thumbnail" width="60" class="rounded shadow-sm border border-primary">
@@ -67,12 +60,6 @@ $result = fetchCourses($conn);
                                         <i class="uil uil-eye"></i> View
                                     </button>
                                 </form>
-
-                                <button class="btn btn-warning btn-sm shadow rounded-pill px-3 edit-course" data-bs-toggle="modal" data-bs-target="#updateCourseModal"
-                                    data-id="<?= $row['course_id']; ?>" data-name="<?= $row['course_name']; ?>" data-desc="<?= $row['course_desc']; ?>"
-                                    data-price="<?= $row['course_price']; ?>" data-level="<?= $row['course_level']; ?>">
-                                    <i class="uil uil-pen"></i> Edit
-                                </button>
 
                                 <form action="" method="POST" class="d-inline">
                                     <input type="hidden" name="id" value="<?= htmlspecialchars($row['course_id']); ?>">
@@ -120,6 +107,10 @@ $result = fetchCourses($conn);
                             <option value="Intermediate">Intermediate</option>
                             <option value="Advanced">Advanced</option>
                         </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Course Image</label>
+                        <input type="file" name="course_image" class="form-control rounded-3 border-primary" accept="image/*">
                     </div>
                     <div class="text-center">
                         <button class="btn btn-primary btn-sm shadow-lg rounded-pill px-4" type="submit" name="courseSubmitBtn">Submit</button>

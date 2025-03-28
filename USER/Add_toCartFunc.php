@@ -1,52 +1,38 @@
 <?php
+session_start();
 include 'includes/config.php';
 header('Content-Type: application/json');
 
-// Validate POST request
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
+// ✅ Check session
+if (!isset($_SESSION['usersid'])) {
+    echo json_encode(['success' => false, 'message' => 'Session expired! Please log in again.']);
     exit;
 }
 
-// Required fields
-$requiredFields = ['course_id', 'course_price'];
+$usersid = intval($_SESSION['usersid']);
 
-foreach ($requiredFields as $field) {
-    if (!isset($_POST[$field]) || empty(trim($_POST[$field]))) {
-        echo json_encode(['success' => false, 'message' => ucfirst($field) . ' is required.']);
-        exit;
-    }
-}
+// ✅ Validate POST data
+$course_id = isset($_POST['course_id']) ? intval($_POST['course_id']) : 0;
+$course_price = isset($_POST['course_price']) ? floatval($_POST['course_price']) : 0.0;
 
-// Assign variables & sanitize inputs
-$course_id = intval($_POST['course_id']);
-$course_price = filter_var($_POST['course_price'], FILTER_VALIDATE_FLOAT);
-$created_at = date('Y-m-d H:i:s'); // Capture current timestamp
-$status = 2; // Default status set to 2
-
-// Validate numerical values
-if ($course_price === false || $course_price <= 0) {
-    echo json_encode(['success' => false, 'message' => 'Invalid course price value.']);
+if ($course_id <= 0 || $course_price <= 0) {
+    echo json_encode(['success' => false, 'message' => 'Invalid course data.']);
     exit;
 }
 
-// Prepare SQL query to insert into `course_cart`
-$query = "INSERT INTO course_cart (course_id, course_price, created_at, status) 
-          VALUES (?, ?, ?, ?)";
+// ✅ Insert data directly
+$query = "INSERT INTO course_cart (usersid, course_id, course_price, created_at, status) 
+          VALUES (?, ?, ?, NOW(), 2)";
 
-if ($stmt = $conn->prepare($query)) {
-    $stmt->bind_param("idsi", $course_id, $course_price, $created_at, $status);
-    
-    if ($stmt->execute()) {
-        echo json_encode(['success' => true, 'message' => 'Course added to cart successfully.']);
-    } else {
-        echo json_encode(['success' => false, 'message' => 'Database error: Unable to add course.', 'error' => $stmt->error]);
-    }
+$stmt = $conn->prepare($query);
+$stmt->bind_param("iid", $usersid, $course_id, $course_price);
 
-    $stmt->close();
-} else {
-    echo json_encode(['success' => false, 'message' => 'Database error: Unable to prepare statement.', 'error' => $conn->error]);
-}
+$response = $stmt->execute()
+    ? ['success' => true, 'message' => 'Course added to cart successfully.']
+    : ['success' => false, 'message' => 'Database error.', 'error' => $stmt->error];
 
+$stmt->close();
 $conn->close();
+
+echo json_encode($response);
 ?>

@@ -1,58 +1,64 @@
 <?php
 include_once("newincludes/newconfig.php");
 
-function sanitizeInput($conn, $input) {
-    return htmlspecialchars(strip_tags(mysqli_real_escape_string($conn, trim($input))));
-}
-
 function insertCourse($conn) {
-    $c_name = sanitizeInput($conn, $_POST['course_name'] ?? '');
-    $c_desc = sanitizeInput($conn, $_POST['course_desc'] ?? '');
-    $c_price = sanitizeInput($conn, $_POST['course_price'] ?? '');
-    $c_level = sanitizeInput($conn, $_POST['course_level'] ?? '');
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['courseSubmitBtn'])) {
+        $course_name = mysqli_real_escape_string($conn, $_POST['course_name']);
+        $course_desc = mysqli_real_escape_string($conn, $_POST['course_desc']);
+        $course_price = floatval($_POST['course_price']);
+        $course_level = mysqli_real_escape_string($conn, $_POST['course_level']);
+        
+        // Handle Image Upload
+        if (isset($_FILES['course_image']) && $_FILES['course_image']['error'] === 0) {
+            $targetDir = "uploads/"; // Make sure this folder exists
+            if (!is_dir($targetDir)) {
+                mkdir($targetDir, 0777, true);
+            }
 
-    // Handle image directly into DB
-    if (!isset($_FILES['course_img']) || $_FILES['course_img']['error'] !== UPLOAD_ERR_OK) {
-        return '<div class="alert alert-danger">Invalid or missing image!</div>';
+            $fileName = time() . "_" . basename($_FILES['course_image']['name']);
+            $targetFilePath = $targetDir . $fileName;
+            $fileType = strtolower(pathinfo($targetFilePath, PATHINFO_EXTENSION));
+
+            // Allowed file types
+            $allowedTypes = ['jpg', 'jpeg', 'png', 'gif'];
+            if (in_array($fileType, $allowedTypes)) {
+                if (move_uploaded_file($_FILES['course_image']['tmp_name'], $targetFilePath)) {
+                    $course_image = $targetFilePath;
+                } else {
+                    return "Error uploading image.";
+                }
+            } else {
+                return "Invalid image format. Allowed: JPG, JPEG, PNG, GIF.";
+            }
+        } else {
+            $course_image = "uploads/default.jpg"; // Default image if none uploaded
+        }
+
+        // Insert into database
+        $query = "INSERT INTO courses (course_name, course_desc, course_price, course_level, course_image) 
+                  VALUES ('$course_name', '$course_desc', '$course_price', '$course_level', '$course_image')";
+
+        if (mysqli_query($conn, $query)) {
+            header("Location: " . $_SERVER['PHP_SELF']);
+            exit();
+        } else {
+            return "Error: " . mysqli_error($conn);
+        }
     }
-
-    $file = $_FILES['course_img'];
-    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-    $maxSize = 2 * 1024 * 1024;  // 2 MB
-
-    $fileType = mime_content_type($file['tmp_name']);
-    $fileSize = $file['size'];
-
-    if (!in_array($fileType, $allowedTypes) || $fileSize > $maxSize) {
-        return '<div class="alert alert-danger">Invalid file type or size!</div>';
-    }
-
-    $imageData = file_get_contents($file['tmp_name']);
-
-    if (empty($c_name) || empty($c_desc) || empty($c_price) || empty($c_level) || !$imageData) {
-        return '<div class="alert alert-warning">All fields are required!</div>';
-    }
-
-    $stmt = $conn->prepare("
-        INSERT INTO courses (course_name, course_desc, course_price, course_level, course_image) 
-        VALUES (?, ?, ?, ?, ?)
-    ");
-    
-    $stmt->bind_param("ssdss", $c_name, $c_desc, $c_price, $c_level, $imageData);
-
-    if ($stmt->execute()) {
-        return '<div class="alert alert-success">Course Added Successfully!</div>';
-    } else {
-        return '<div class="alert alert-danger">Error: ' . $conn->error . '</div>';
-    }
-
-    $stmt->close();
 }
 
 function fetchCourses($conn) {
-    $sql = "SELECT course_id, course_name, course_price, course_level, course_image FROM courses";
-    $result = $conn->query($sql);
+    $query = "SELECT * FROM courses ORDER BY course_id DESC";
+    return mysqli_query($conn, $query);
+}
 
-    return ($result->num_rows > 0) ? $result : false;
+function deleteCourse($conn, $course_id) {
+    $query = "DELETE FROM courses WHERE course_id = $course_id";
+    if (mysqli_query($conn, $query)) {
+        header("Location: " . $_SERVER['PHP_SELF']);
+        exit();
+    } else {
+        return "Error deleting course: " . mysqli_error($conn);
+    }
 }
 ?>

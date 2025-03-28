@@ -22,8 +22,8 @@ $user = $user_result->fetch_assoc();
 $fullname = $user['fullname'] ?? 'Guest';
 $email = $user['email'] ?? 'No Email';
 
-// Fetch courses from cart with a JOIN
-$query = "SELECT c.course_id, c.course_name, c.course_lessons, c.course_price, c.course_instructor, cc.cart_id 
+// Fetch courses from cart (Removed `course_lessons`)
+$query = "SELECT c.course_id, c.course_name, c.course_price, cc.cart_id 
           FROM course_cart cc 
           INNER JOIN courses c ON cc.course_id = c.course_id
           WHERE cc.usersid = ? AND cc.status = ?";
@@ -53,8 +53,6 @@ $result = $stmt->get_result();
                     <div class="card shadow-sm">
                         <div class="card-body">
                             <h5 class="card-title"><?= htmlspecialchars($row['course_name']) ?></h5>
-                            <p class="card-text">Lessons: <?= htmlspecialchars($row['course_lessons']) ?></p>
-                            <p class="card-text">Instructor: <?= htmlspecialchars($row['course_instructor']) ?></p>
                             <p class="card-text"><strong>Price: $<?= number_format($row['course_price'], 2) ?></strong></p>
 
                             <form method="POST" action="FetchAddtoCart.php">
