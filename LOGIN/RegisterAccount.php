@@ -175,11 +175,16 @@
         })
         .then(response => response.text())
         .then(data => {
-            document.getElementById("message").textContent = data;
+            if (data.trim() === "success") {
+                window.location.href = "LoginAccount.php"; // Redirect on success
+            } else {
+                document.getElementById("message").textContent = data; // Show error message
+            }
         })
         .catch(error => console.error("Error:", error));
     });
 </script>
+
 
 </body>
 </html>

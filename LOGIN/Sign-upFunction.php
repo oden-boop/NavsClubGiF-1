@@ -14,7 +14,7 @@ if ($conn->connect_error) {
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Debug: Check if the form is actually submitting
+    // Check if required fields are provided
     if (empty($_POST["email"]) || empty($_POST["password"]) || empty($_POST["fullname"])) {
         die("Error: Missing required fields.");
     }
@@ -62,18 +62,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         die("SQL Error: " . $conn->error);
     }
 
-    $stmt->bind_param("ssssssis", $email, $password_hash, $fullname, $nickname, $rank, $confirmed, $usertype, $created_at);
+    // Corrected bind_param format
+    $stmt->bind_param("sssssiss", $email, $password_hash, $fullname, $nickname, $rank, $confirmed, $usertype, $created_at);
 
     if ($stmt->execute()) {
         echo "Success: Account created! Redirecting to login...";
         echo "<script>
                 setTimeout(function() {
-                    window.location.href = 'LoginAccount.php';
-                }, 2000); // 2 seconds
+                    window.location.replace('LoginAccount.php');
+                }, 2000); // Redirect after 2 seconds
               </script>";
         exit();
-    }
-    else {
+    } else {
         die("Error: " . $stmt->error);
     }
 

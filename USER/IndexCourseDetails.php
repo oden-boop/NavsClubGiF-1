@@ -37,7 +37,6 @@ $course = $result->fetch_assoc();
            
             <div class="col-md-6">
                 <h2 class="fw-bold"> <?= htmlspecialchars($course['course_name'] ?? ''); ?> </h2>
-                <h4 class="text-muted">Instructor: <?= htmlspecialchars($course['course_instructor'] ?? ''); ?></h4>
                 <h5 class="text-success mt-3">Price: &#36;<?= htmlspecialchars($course['course_price'] ?? ''); ?></h5>
                 <p class="mt-3"> <?= htmlspecialchars($course['course_desc'] ?? ''); ?> </p>
                 <button id="addToCart" class="btn btn-primary w-100 mt-3" data-course-id="<?= $cid; ?>">
@@ -48,31 +47,45 @@ $course = $result->fetch_assoc();
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-    document.getElementById("addToCart").addEventListener("click", function () {
-        const courseId = this.getAttribute("data-course-id");
+    <!-- ✅ Include jQuery first -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-        fetch('Add_toCartFunc.php', {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: "course_id=" + encodeURIComponent(courseId)
-        })
-        .then(response => response.text())
-        .then(data => {
-            try {
-                let json = JSON.parse(data);
-                if (json.status === "success") {
-                    window.location.href = "AddingtoCartCourse.php"; 
-                } else {
-                    document.getElementById("cartMessage").innerText = json.message;
-                }
-            } catch (error) {
-                console.error("Invalid JSON Response:", data);
+<!-- ✅ Your custom script -->
+<script>
+    $(document).ready(function () {
+        $("#addToCart").on("click", function () {
+            let courseId = $(this).data("course-id");
+
+            if (!courseId) {
+                alert("❌ Invalid Course ID.");
+                return;
             }
-        })
-        .catch(error => console.error('Fetch Error:', error));
+
+            $.ajax({
+                url: "Add_toCartFunc.php",
+                type: "POST",
+                data: { course_id: courseId },
+                dataType: "json",
+                success: function (response) {
+                    console.log("Response:", response);  // ✅ Debugging
+
+                    if (response.success) {
+                        window.location.href = "AddingtoCartCourse.php"; // ✅ Redirect on success
+                    } else {
+                        $("#cartMessage")
+                            .text("❌ " + response.message)
+                            .css("color", "red"); // ✅ Show error message in red
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error("AJAX Error:", error);
+                    $("#cartMessage").text("❌ Failed to process request.").css("color", "red");
+                }
+            });
+        });
     });
-    </script>
+</script>
+
 </body>
 </html>
