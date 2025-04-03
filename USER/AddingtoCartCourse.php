@@ -55,20 +55,24 @@ $result = $stmt->get_result();
                 $course_stmt->execute();
                 $course_result = $course_stmt->get_result();
                 $course = $course_result->fetch_assoc();
+
+                if (!$course) {
+                    continue; // Skip if course is not found
+                }
                 ?>
 
                 <div class="col-md-4 col-sm-6 col-12 mb-4">
                     <div class="card shadow-sm">
                         <div class="card-body">
                             <h5 class="card-title"><?= htmlspecialchars($course['course_name']); ?></h5>
-                            <p class="card-text">Level: <?= htmlspecialchars($course['course_level']); ?></p>
-                            <p class="card-text"><strong>Price: $<?= number_format($course['course_price'], 2); ?></strong></p>
-                            <p class="card-text"><?= nl2br(htmlspecialchars($course['course_desc'])); ?></p>
+                            <p class="card-text">Level: <?= htmlspecialchars($course['course_level'] ?? 'N/A'); ?></p>
+                            <p class="card-text"><strong>Price: $<?= number_format((float)$course['course_price'], 2); ?></strong></p>
+                            <p class="card-text"><?= nl2br(htmlspecialchars($course['course_desc'] ?? 'No description available')); ?></p>
 
                             <!-- ✅ Proceed to checkout -->
                             <button class="btn btn-primary w-100 proceedToCheckout"
                                     data-course-name="<?= htmlspecialchars($course['course_name']); ?>"
-                                    data-course-price="<?= number_format($course['course_price'], 2); ?>"
+                                    data-course-price="<?= number_format((float)$course['course_price'], 2); ?>"
                                     data-fullname="<?= htmlspecialchars($fullname); ?>"
                                     data-email="<?= htmlspecialchars($email); ?>">
                                 Proceed to Payment
@@ -85,26 +89,55 @@ $result = $stmt->get_result();
     </div>
 </div>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
 <script>
-    document.querySelectorAll(".proceedToCheckout").forEach(button => {
-        button.addEventListener("click", function () {
-            let courseName = this.getAttribute("data-course-name");
-            let coursePrice = this.getAttribute("data-course-price");
-            let fullname = this.getAttribute("data-fullname");
-            let email = this.getAttribute("data-email");
-            let orderId = "ORD_" + Date.now(); // Generate unique order ID
+   $(document).ready(function() {
+    $(".proceedToCheckout").click(function() {
+        // Collect data from the clicked button's data attributes
+        let courseName = $(this).data("course-name");
+        let coursePrice = $(this).data("course-price");
+        let fullname = $(this).data("fullname");
+        let email = $(this).data("email");
+        let orderId = "ORD_" + Date.now(); // Generate unique order ID based on timestamp
 
-            // ✅ Store data in sessionStorage
-            sessionStorage.setItem("course_name", courseName);
-            sessionStorage.setItem("course_price", coursePrice);
-            sessionStorage.setItem("fullname", fullname);
-            sessionStorage.setItem("email", email);
-            sessionStorage.setItem("order_id", orderId);
+        // Create an object to send to PHP
+        let data = {
+            course_name: courseName,
+            course_price: coursePrice,
+            fullname: fullname,
+            email: email,
+            order_id: orderId
+        };
 
-            // ✅ Redirect to checkout page
-            window.location.href = "CourseForCheckout.php";
+        // Send AJAX request
+        $.ajax({
+            url: "insertCheckout.php", // Your PHP script to insert data
+            type: "POST",
+            data: data,
+            success: function(response) {
+                if (response == 'success') {
+                    // Store data in sessionStorage
+                    sessionStorage.setItem("course_name", courseName);
+                    sessionStorage.setItem("course_price", coursePrice);
+                    sessionStorage.setItem("fullname", fullname);
+                    sessionStorage.setItem("email", email);
+                    sessionStorage.setItem("order_id", orderId);
+
+                    // Redirect to the checkout page
+                    window.location.href = "CourseForCheckout.php";
+                } else {
+                    alert('Failed to insert checkout data.');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error("AJAX Error: " + error); // Log error for debugging
+                alert('An error occurred. Please try again.');
+            }
         });
     });
+});
+
 </script>
 
 </body>

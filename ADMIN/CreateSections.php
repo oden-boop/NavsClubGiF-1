@@ -193,7 +193,7 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-  $(document).ready(function () {
+ $(document).ready(function () {
     loadSections(); // Load sections on page load
 
     // ✅ Show Toast Message
@@ -219,6 +219,11 @@
                 let sectionsContainer = $('#sectionsContainer');
                 sectionsContainer.html(''); // Clear old content
 
+                if (!sections.data || sections.data.length === 0) {
+                    sectionsContainer.html('<p class="text-muted">No sections available.</p>');
+                    return;
+                }
+
                 sections.data.forEach(section => {
                     let sectionDiv = `
                         <div class="section-card" data-section-id="${section.section_id}">
@@ -235,9 +240,11 @@
                 });
             } catch (error) {
                 console.error("JSON Parsing Error: ", error, data);
+                showToast("Error loading sections!", "danger");
             }
         }, 'json').fail(function(jqXHR, textStatus, errorThrown) {
             console.error("AJAX Error:", textStatus, errorThrown, jqXHR.responseText);
+            showToast("Failed to load sections.", "danger");
         });
     }
 
@@ -245,16 +252,25 @@
     $('#addSectionForm').submit(function (e) {
         e.preventDefault();
         let formData = $(this).serialize();
+
         $.post('CreateNewSections.php', formData, function (response) {
-            if (response.success) {
-                showToast(response.message, 'success');
-                $('#addSectionModal').modal('hide');
-                $('#addSectionForm')[0].reset();
-                loadSections();
-            } else {
-                showToast(response.message, 'danger');
+            try {
+                if (response.success) {
+                    showToast(response.message, 'success');
+                    $('#addSectionModal').modal('hide');
+                    $('#addSectionForm')[0].reset();
+                    loadSections();
+                } else {
+                    showToast(response.message || "An error occurred!", 'danger');
+                }
+            } catch (error) {
+                console.error("Error processing response:", error);
+                showToast("Unexpected server response.", "danger");
             }
-        }, 'json');
+        }, 'json').fail(function (jqXHR, textStatus, errorThrown) {
+            console.error("AJAX Error:", textStatus, errorThrown, jqXHR.responseText);
+            showToast("Failed to create section.", "danger");
+        });
     });
 
     // ✅ Show Add Lesson Modal
@@ -270,16 +286,25 @@
     $('#addLessonForm').submit(function (e) {
         e.preventDefault();
         let formData = $(this).serialize();
+
         $.post('add_lesson.php', formData, function (response) {
-            if (response.success) {
-                showToast(response.message, 'success');
-                $('#lessonModal').modal('hide');
-                $('#addLessonForm')[0].reset();
-                loadSections();
-            } else {
-                showToast(response.message, 'danger');
+            try {
+                if (response.success) {
+                    showToast(response.message, 'success');
+                    $('#lessonModal').modal('hide');
+                    $('#addLessonForm')[0].reset();
+                    loadSections();
+                } else {
+                    showToast(response.message || "An error occurred!", 'danger');
+                }
+            } catch (error) {
+                console.error("Error processing response:", error);
+                showToast("Unexpected server response.", "danger");
             }
-        }, 'json');
+        }, 'json').fail(function (jqXHR, textStatus, errorThrown) {
+            console.error("AJAX Error:", textStatus, errorThrown, jqXHR.responseText);
+            showToast("Failed to add lesson.", "danger");
+        });
     });
 
     // ✅ Toggle Lesson Dropdown (Fixing Click Issue)
@@ -309,8 +334,7 @@
         }
     });
 
-});
-$(document).ready(function () {
+    // ✅ Video ID Input Handling
     $("#videoId").on("input", function () {
         let videoId = $(this).val().trim(); // Get video ID from input
         
@@ -321,7 +345,7 @@ $(document).ready(function () {
                 data: { video_id: videoId },
                 dataType: 'json',
                 success: function (response) {
-                    if (response.error) {
+                    if (response.error || !response.thumbnail || !response.description) {
                         console.error("❌ Error:", response.error);
                         $("#lessonDescription").val("Invalid or missing video details.");
                         $("#videoThumbnail").attr("src", "").hide();
@@ -333,7 +357,7 @@ $(document).ready(function () {
                     $("#videoThumbnail").attr("src", response.thumbnail).show();
                 },
                 error: function (xhr, status, error) {
-                    console.error("❌ AJAX Error:", error);
+                    console.error("❌ AJAX Error:", error, xhr.responseText);
                     $("#lessonDescription").val("Failed to fetch video details.");
                     $("#videoThumbnail").attr("src", "").hide();
                 }
@@ -345,7 +369,6 @@ $(document).ready(function () {
         }
     });
 });
-
 
 </script>
 

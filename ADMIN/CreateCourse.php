@@ -54,7 +54,7 @@ $result = fetchCourses($conn);
                                 <img src="<?= htmlspecialchars($row['course_image']); ?>" alt="Thumbnail" width="60" class="rounded shadow-sm border border-primary">
                             </td>
                             <td>
-                                <form action="CreateLessons.php" method="GET" class="d-inline">
+                                <form action="CreateSections.php" method="GET" class="d-inline">
                                     <input type="hidden" name="course_id" value="<?= htmlspecialchars($row['course_id']); ?>">
                                     <button type="submit" class="btn btn-primary btn-sm shadow rounded-pill px-3">
                                         <i class="uil uil-eye"></i> View
